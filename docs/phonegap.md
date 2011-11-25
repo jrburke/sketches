@@ -9,14 +9,18 @@ To set the stage for the **futuregap** stuff mentioned below, here are some thin
 
 Instead of having to overwrite addEventListener and such to support 'deviceready' event, I would rather just see Phonegap be a function that called the argument passed to it once the device was ready:
 
+```javascript
     Phonegap(function (PG) {
         //This executes after device ready.
     });
+```
 
 then have something like the following for code that needs to do initialization/setup before deviceready callbacks are done:
 
+```javascript
     Phonegap.on('init', function (PG) {
     });
+```
 
 I'm not too concerned with the actual naming of the pub/sub stuff, but the basic point is to have three APIs (Phonegap(), Phonegap.on(), Phonegap.exec()) to start working with Phonegap.
 
@@ -24,20 +28,25 @@ I'm not too concerned with the actual naming of the pub/sub stuff, but the basic
 
 This would allow using Phonegap as a plain AMD module and more importantly set the stage to be used as a loader plugin (see next section), but basically doing something like this at the end of the Phonegap file:
 
+```javascript
     if (typeof define === 'function' && define.amd) {
         define(function () { return Phonegap; });
     }
+```
 
 ## Phonegap as an AMD loader plugin
 
 I would like to use Phonegap as a loader plugin, so that if it is used as a plugin, it would mean "do not resolve the dependency until device ready".
 
+```javascript
     define(['phonegap!', 'my/mod'], function (PG, mymod) {
         //This is not called until device ready.
     });
+```
 
 Assuming Phonegap() above is supported, to work as a loader plugin, Phonegap would implement a "load" function.
 
+```javascript
     Phonegap.load = function (name, require, load, config) {
         if (config.isBuild) {
             load();
@@ -45,9 +54,11 @@ Assuming Phonegap() above is supported, to work as a loader plugin, Phonegap wou
             Phonegap(load);
         }
     }
+```
 
 If you prefer to not define that function on Phonegap for when Phonegap is not used in an AMD loader, the define call could look like:
 
+```javascript
     if (typeof define === 'function' && define.amd) {
         define(function () {
             function PG () {
@@ -63,7 +74,7 @@ If you prefer to not define that function on Phonegap for when Phonegap is not u
             return PG;
         });
     }
-
+```
 
 # futuregap
 
@@ -93,7 +104,7 @@ Assume the following command is run:
 
 This creates a project called **submarine**. Creates a directory for submarine and the native code bits that are needed to run this app in android and ios. The directory structure for the project would look something like this:
 
-* **submarine
+* **submarine**
     * **sim**: any files needed for a browser-based simulator? may not be needed.
     * **native**
         * **android**: java source & binary goo in here.
@@ -103,19 +114,20 @@ This creates a project called **submarine**. Creates a directory for submarine a
         * **css**
             * **index.css**
         * **js**
-            * **index.js**
+            * **[index.js](#index-js)**
             * **android**
-                * **plugins.js**
-                * **exec.js**
-                * **sms.js** (assuming `pgm add sms` was done)
+                * **[plugins.js](#plugins-js)**
+                * **exec.js**: phonegap.exec impl for android
+                * **[sms.js](#sms-js)** (assuming `pgm add sms` was done)
             * **ios**
                 * **plugins.js**
                 * **exec.js**
-            * **phonegap.js**
+            * **[phonegap.js](#phonegap-js)**
             * **phonegap**
-                * **src.js**:
-                * **env.js**: the env plugin, similar to this one, but includes support of all phonegap platforms.
-                * **require.js**: the requirejs implementation, only used in dev
+                * **[src.js](#src-js)**
+                * **[core.js](#core-js)**
+                * **env.js**: the env plugin, [similar to this one](https://github.com/jrburke/submarine/blob/master/phonegap/www/js/env.js), but includes support of all phonegap platforms.
+                * **require.js**: the RequireJS implementation, only used in dev
     * **tools**
         * **build.js**
 
@@ -146,7 +158,7 @@ More on specific files below...
     </html>
 ```
 
-## js/phonegap.js
+## js/phonegap.js  <a name="phonegap-js"></a>
 
 * document.write's out the require.js tag
 * maps the 'phonegap' module ID to the 'phonegap/src.js' file.
@@ -155,7 +167,7 @@ More on specific files below...
 * In the build output, this file will be replaced with all the minified/combined modules for the app, no document.write, and no require.js -- it can be almond.js instead.
 * If user wants dynamic loading, for instance for the google maps API, then require.js can be included instead (build system can figure that out, scan for dynamic require([]) calls).
 
-## js/index.js
+## js/index.js  <a name="index-js"></a>
 
 ```javascript
     require(['phonegap!', 'my/mod'], function (phonegap, myMod) {
@@ -167,7 +179,7 @@ More on specific files below...
     });
 ```
 
-## phonegap/src.js
+## phonegap/src.js <a name="src-js"></a>
 
 The "dev" version of phonegap. Looks something like:
 
@@ -178,7 +190,7 @@ The "dev" version of phonegap. Looks something like:
     });
 ```
 
-## phonegap/core.js
+## phonegap/core.js <a name="core-js"></a>
 
 Defines the main three public APIs. Calls for the environment-specific
 exec.js to define phonegap.exec.
@@ -213,7 +225,7 @@ exec.js to define phonegap.exec.
     });
 ```
 
-## android/plugins.js
+## android/plugins.js <a name="plugins-js"></a>
 
 The file is loaded for 'env!env/plugins' when env === android. As the user does `pgm add sms` that
 would end up placing the sms.js file in the **android** directory, then inserting
@@ -226,7 +238,7 @@ was added during the `pgm add sms` step.
     })
 ```
 
-## android/sms.js
+## android/sms.js <a name="sms-js"></a>
 
 ```javascript
     define(['phonegap/core', function (phonegap) {
